@@ -1,3 +1,16 @@
+2018-07-28
+
+	Update to glibc 2.27
+	* regcomp.c: Update to glibc 2.27.
+	* regex.c: Likewise.
+	* regex.h: Likewise.
+	* regex_internal.c: Likewise.
+	* regex_internal.h: Likewise.
+	* regexec.c: Likewise.
+	* configure.ac: Bump to 2.7.0.
+	* configure: Regenerated.
+
+
 2015-12-16  Timothy Gu  <timothygu99@gmail.com>
 
 	Add forgotten files from glibc 2.22
