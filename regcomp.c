@@ -1,5 +1,5 @@
 /* Extended regular expression matching and search library.
-   Copyright (C) 2002-2015 Free Software Foundation, Inc.
+   Copyright (C) 2002-2018 Free Software Foundation, Inc.
    This file is part of the GNU C Library.
    Contributed by Isamu Hasegawa <isamu@yamato.ibm.com>.
 
@@ -61,7 +61,7 @@ static reg_errcode_t calc_inveclosure (re_dfa_t *dfa);
 static int fetch_number (re_string_t *input, re_token_t *token,
 			 reg_syntax_t syntax);
 static int peek_token (re_token_t *token, re_string_t *input,
-			reg_syntax_t syntax) internal_function;
+			reg_syntax_t syntax);
 static bin_tree_t *parse (re_string_t *regexp, regex_t *preg,
 			  reg_syntax_t syntax, reg_errcode_t *err);
 static bin_tree_t *parse_reg_exp (re_string_t *regexp, regex_t *preg,
@@ -216,10 +216,8 @@ const size_t __re_error_msgid_idx[] attribute_hidden =
    are set in BUFP on entry.  */
 
 const char *
-re_compile_pattern (pattern, length, bufp)
-    const char *pattern;
-    size_t length;
-    struct re_pattern_buffer *bufp;
+re_compile_pattern (const char *pattern, size_t length,
+		    struct re_pattern_buffer *bufp)
 {
   reg_errcode_t ret;
 
@@ -257,8 +255,7 @@ reg_syntax_t re_syntax_options;
    defined in regex.h.  We return the old syntax.  */
 
 reg_syntax_t
-re_set_syntax (syntax)
-    reg_syntax_t syntax;
+re_set_syntax (reg_syntax_t syntax)
 {
   reg_syntax_t ret = re_syntax_options;
 
@@ -270,8 +267,7 @@ weak_alias (__re_set_syntax, re_set_syntax)
 #endif
 
 int
-re_compile_fastmap (bufp)
-    struct re_pattern_buffer *bufp;
+re_compile_fastmap (struct re_pattern_buffer *bufp)
 {
   re_dfa_t *dfa = (re_dfa_t *) bufp->buffer;
   char *fastmap = bufp->fastmap;
@@ -469,10 +465,7 @@ re_compile_fastmap_iter (regex_t *bufp, const re_dfastate_t *init_state,
    the return codes and their meanings.)  */
 
 int
-regcomp (preg, pattern, cflags)
-    regex_t *__restrict preg;
-    const char *__restrict pattern;
-    int cflags;
+regcomp (regex_t *__restrict preg, const char *__restrict pattern, int cflags)
 {
   reg_errcode_t ret;
   reg_syntax_t syntax = ((cflags & REG_EXTENDED) ? RE_SYNTAX_POSIX_EXTENDED
@@ -524,6 +517,7 @@ regcomp (preg, pattern, cflags)
   return (int) ret;
 }
 #ifdef _LIBC
+libc_hidden_def (__regcomp)
 weak_alias (__regcomp, regcomp)
 #endif
 
@@ -531,11 +525,8 @@ weak_alias (__regcomp, regcomp)
    from either regcomp or regexec.   We don't use PREG here.  */
 
 size_t
-regerror (errcode, preg, errbuf, errbuf_size)
-    int errcode;
-    const regex_t *__restrict preg;
-    char *__restrict errbuf;
-    size_t errbuf_size;
+regerror (int errcode, const regex_t *__restrict preg, char *__restrict errbuf,
+	  size_t errbuf_size)
 {
   const char *msg;
   size_t msg_size;
@@ -639,8 +630,7 @@ free_dfa_content (re_dfa_t *dfa)
 /* Free dynamically allocated space used by PREG.  */
 
 void
-regfree (preg)
-    regex_t *preg;
+regfree (regex_t *preg)
 {
   re_dfa_t *dfa = (re_dfa_t *) preg->buffer;
   if (BE (dfa != NULL, 1))
@@ -655,6 +645,7 @@ regfree (preg)
   preg->translate = NULL;
 }
 #ifdef _LIBC
+libc_hidden_def (__regfree)
 weak_alias (__regfree, regfree)
 #endif
 
@@ -673,8 +664,7 @@ char *
    regcomp/regexec above without link errors.  */
 weak_function
 # endif
-re_comp (s)
-     const char *s;
+re_comp (const char *s)
 {
   reg_errcode_t ret;
   char *fastmap;
@@ -928,7 +918,6 @@ init_dfa (re_dfa_t *dfa, size_t pat_len)
    character used by some operators like "\<", "\>", etc.  */
 
 static void
-internal_function
 init_word_char (re_dfa_t *dfa)
 {
   dfa->word_ops_used = 1;
@@ -936,26 +925,29 @@ init_word_char (re_dfa_t *dfa)
   int ch = 0;
   if (BE (dfa->map_notascii == 0, 1))
     {
-      if (sizeof (dfa->word_char[0]) == 8)
+      /* Avoid uint32_t and uint64_t as some non-GCC platforms lack
+	 them, an issue when this code is used in Gnulib.  */
+      bitset_word_t bits0 = 0x00000000;
+      bitset_word_t bits1 = 0x03ff0000;
+      bitset_word_t bits2 = 0x87fffffe;
+      bitset_word_t bits3 = 0x07fffffe;
+      if (BITSET_WORD_BITS == 64)
 	{
-          /* The extra temporaries here avoid "implicitly truncated"
-             warnings in the case when this is dead code, i.e. 32-bit.  */
-          const uint64_t wc0 = UINT64_C (0x03ff000000000000);
-          const uint64_t wc1 = UINT64_C (0x07fffffe87fffffe);
-	  dfa->word_char[0] = wc0;
-	  dfa->word_char[1] = wc1;
+	  /* Pacify gcc -Woverflow on 32-bit platformns.  */
+	  dfa->word_char[0] = bits1 << 31 << 1 | bits0;
+	  dfa->word_char[1] = bits3 << 31 << 1 | bits2;
 	  i = 2;
 	}
-      else if (sizeof (dfa->word_char[0]) == 4)
+      else if (BITSET_WORD_BITS == 32)
 	{
-	  dfa->word_char[0] = UINT32_C (0x00000000);
-	  dfa->word_char[1] = UINT32_C (0x03ff0000);
-	  dfa->word_char[2] = UINT32_C (0x87fffffe);
-	  dfa->word_char[3] = UINT32_C (0x07fffffe);
+	  dfa->word_char[0] = bits0;
+	  dfa->word_char[1] = bits1;
+	  dfa->word_char[2] = bits2;
+	  dfa->word_char[3] = bits3;
 	  i = 4;
 	}
       else
-	abort ();
+        goto general_case;
       ch = 128;
 
       if (BE (dfa->is_utf8, 1))
@@ -965,6 +957,7 @@ init_word_char (re_dfa_t *dfa)
 	}
     }
 
+ general_case:
   for (; i < BITSET_WORDS; ++i)
     for (int j = 0; j < BITSET_WORD_BITS; ++j, ++ch)
       if (isalnum (ch) || ch == '_')
@@ -1472,7 +1465,6 @@ link_nfa_nodes (void *extra, bin_tree_t *node)
    to their own constraint.  */
 
 static reg_errcode_t
-internal_function
 duplicate_node_closure (re_dfa_t *dfa, int top_org_node, int top_clone_node,
 			int root_node, unsigned int init_constraint)
 {
@@ -1761,7 +1753,6 @@ calc_eclosure_iter (re_node_set *new_set, re_dfa_t *dfa, int node, int root)
    We must not use this function inside bracket expressions.  */
 
 static void
-internal_function
 fetch_token (re_token_t *result, re_string_t *input, reg_syntax_t syntax)
 {
   re_string_skip_bytes (input, peek_token (result, input, syntax));
@@ -1771,7 +1762,6 @@ fetch_token (re_token_t *result, re_string_t *input, reg_syntax_t syntax)
    We must not use this function inside bracket expressions.  */
 
 static int
-internal_function
 peek_token (re_token_t *token, re_string_t *input, reg_syntax_t syntax)
 {
   unsigned char c;
@@ -2010,7 +2000,6 @@ peek_token (re_token_t *token, re_string_t *input, reg_syntax_t syntax)
    We must not use this function out of bracket expressions.  */
 
 static int
-internal_function
 peek_token_bracket (re_token_t *token, re_string_t *input, reg_syntax_t syntax)
 {
   unsigned char c;
@@ -2638,7 +2627,6 @@ parse_dup_op (bin_tree_t *elem, re_string_t *regexp, re_dfa_t *dfa,
      update it.  */
 
 static reg_errcode_t
-internal_function
 # ifdef RE_ENABLE_I18N
 build_range_exp (bitset_t sbcset, re_charset_t *mbcset, int *range_alloc,
 		 bracket_elem_t *start_elem, bracket_elem_t *end_elem)
@@ -2759,7 +2747,6 @@ build_range_exp (bitset_t sbcset, bracket_elem_t *start_elem,
    pointer argument since we may update it.  */
 
 static reg_errcode_t
-internal_function
 # ifdef RE_ENABLE_I18N
 build_collating_symbol (bitset_t sbcset, re_charset_t *mbcset,
 			int *coll_sym_alloc, const unsigned char *name)
@@ -3446,7 +3433,7 @@ build_equiv_class (bitset_t sbcset, const unsigned char *name)
 	/* This isn't a valid character.  */
 	return REG_ECOLLATE;
 
-      /* Build single byte matcing table for this equivalence class.  */
+      /* Build single byte matching table for this equivalence class.  */
       len = weights[idx1 & 0xffffff];
       for (ch = 0; ch < SBC_MAX; ++ch)
 	{
