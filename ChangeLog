@@ -1,3 +1,15 @@
+2018-09-24
+
+	Update to glibc 2.28
+	* regcomp.c: Update to glibc 2.28.
+	* regex.c: Likewise.
+	* regex.h: Likewise.
+	* regex_internal.c: Likewise.
+	* regex_internal.h: Likewise.
+	* regexec.c: Likewise.
+	* configure.ac: Bump to 2.8.0.
+	* configure: Regenerated.
+
 2018-07-28
 
 	Update to glibc 2.27
