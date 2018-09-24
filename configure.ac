@@ -16,7 +16,7 @@
 #                            ---------------  ----------
   MINGW_AC_DEFINE_PACKAGE_ID([BASENAME],      [libgnurx])
   MINGW_AC_DEFINE_PACKAGE_ID([VERSION_MAJOR], [2])
-  MINGW_AC_DEFINE_PACKAGE_ID([VERSION_MINOR], [7])
+  MINGW_AC_DEFINE_PACKAGE_ID([VERSION_MINOR], [8])
 #
 # PATCHLEVEL is optional; comment/uncomment and adjust as required.
 #

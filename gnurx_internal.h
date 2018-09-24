@@ -19,7 +19,6 @@
 #define _GNURX_INTERNAL_H 1
 
 #define _GNU_SOURCE
-#define IS_IN(x) 1
 
 /* GNURX: from glibc-2.22/misc/sys/param.h */
 /* Macros for min/max.  */
