@@ -492,9 +492,14 @@ typedef struct re_dfa_t re_dfa_t;
 #define re_string_skip_bytes(pstr,idx) ((pstr)->cur_idx += (idx))
 #define re_string_set_index(pstr,idx) ((pstr)->cur_idx = (idx))
 
+#ifdef __MINGW32__
+# define HAVE_ALLOCA 1
+# include <malloc.h>
+#else /**/
 #if defined _LIBC || HAVE_ALLOCA
 # include <alloca.h>
 #endif
+#endif /**/
 
 #ifndef _LIBC
 # if HAVE_ALLOCA
