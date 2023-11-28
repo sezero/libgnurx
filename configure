@@ -1504,6 +1504,8 @@ done
 # WARNING: Use '\'' to represent an apostrophe within the trap.
 # WARNING: Do not start the trap code with a newline, due to a FreeBSD 4.0 bug.
 trap 'exit_status=$?
+  # Sanitize IFS.
+  IFS=" ""	$as_nl"
   # Save into config.log some information that might help in debugging.
   {
     echo
@@ -2223,6 +2225,8 @@ int
 main ()
 {
 FILE *f = fopen ("conftest.out", "w");
+ if (!f)
+  return 1;
  return ferror (f) || fclose (f) != 0;
 
   ;
@@ -2234,7 +2238,9 @@ ac_clean_files="$ac_clean_files conftest.out"
 # the compiler is broken, or we cross compile.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we are cross compiling" >&5
 $as_echo_n "checking whether we are cross compiling... " >&6; }
-if test "$cross_compiling" != yes; then
+if test "$cross_compiling" = maybe && test "x$build" != "x$host"; then
+  cross_compiling=yes
+elif test "$cross_compiling" != yes; then
   { { ac_try="$ac_link"
 case "(($ac_try" in
   *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
@@ -2715,6 +2721,7 @@ fi
 
 
   test "$ac_cv_prog_cc_c99" = "no" && as_fn_error $? "The C compiler must be able to understand C99." "$LINENO" 5
+  CFLAGS="$CFLAGS -Wall"
   ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -2723,20 +2730,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
  popCFLAGS=$CFLAGS
  echo 'int main(void){return 0;}' > conftest.$ac_ext
- { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC accepts the -mthreads option" >&5
-$as_echo_n "checking whether $CC accepts the -mthreads option... " >&6; }
-   CFLAGS="$popCFLAGS $CC_QUALIFIED -mthreads"
-   if (eval $ac_compile) 2>&5; then
-     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-     CC_QUALIFIED=${CC_QUALIFIED+"$CC_QUALIFIED "}"-mthreads"
-   else
-     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-     echo 'failed program was:' >&5
-     sed 's/^/| /' conftest.$ac_ext >&5
-   fi
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC accepts the -mtune=pentium3 option" >&5
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC accepts the -mtune=pentium3 option" >&5
 $as_echo_n "checking whether $CC accepts the -mtune=pentium3 option... " >&6; }
    CFLAGS="$popCFLAGS $CC_QUALIFIED -mtune=pentium3"
    if (eval $ac_compile) 2>&5; then

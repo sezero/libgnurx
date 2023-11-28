@@ -61,7 +61,8 @@
   AC_PROG_CC
   AC_PROG_CC_C99
   test "$ac_cv_prog_cc_c99" = "no" && AC_MSG_ERROR([The C compiler must be able to understand C99.])
-  MINGW_AC_PROG_CC_OPTIONS([CC_QUALIFIED], [-m], [threads tune=pentium3])
+  CFLAGS="$CFLAGS -Wall"
+  MINGW_AC_PROG_CC_OPTIONS([CC_QUALIFIED], [-m], [tune=pentium3])
 
 # Set the release version for the resultant DLL.
 #
